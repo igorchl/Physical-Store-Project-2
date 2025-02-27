@@ -10,7 +10,7 @@ app.get('/stores/:cep', async (req: Request, res: Response) => {
     try {
       const stores = await findNearbyStores(cep);
       res.json(stores);
-    } catch (error: any) {  // Aqui, usamos `any` para permitir o acesso sem erro
+    } catch (error: any) {  
       res.status(500).json({ message: 'Erro ao buscar lojas', error: error.message });
     }
   });

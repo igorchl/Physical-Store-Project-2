@@ -1,14 +1,35 @@
-import db from "./db"; // importando a instância do db configurada
+import db from "./db"; 
 import { logger } from "./logger";
+import axios from "axios"; 
 
-// Função para buscar lojas no banco de dados
+
+async function getAddressByCep(cep: string) {
+    try {
+        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+        return response.data;
+    } catch (error) {
+        throw new Error("Erro ao buscar CEP no ViaCEP");
+    }
+}
+
+
 export async function findNearbyStores(userCep: string) {
     try {
-        // Buscando lojas cadastradas no banco com um CEP similar ao do usuário
-        const stores = await db("stores").where("cep", userCep); // Usando o knex para buscar lojas pelo CEP
         
+        const userAddress = await getAddressByCep(userCep);
+        if (!userAddress || userAddress.erro) {
+            throw new Error("CEP inválido ou não encontrado.");
+        }
+
+        const { bairro, localidade, uf } = userAddress; 
+
+        
+        const stores = await db("stores")
+            .where("city", localidade)
+            .andWhere("state", uf);
+
         if (!stores.length) {
-            throw new Error("Nenhuma loja encontrada para o CEP fornecido.");
+            throw new Error("Nenhuma loja encontrada na sua região.");
         }
 
         return stores;

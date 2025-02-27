@@ -1,8 +1,8 @@
 import winston from "winston";
 
-// Configuração do winston para gerar logs
+
 const logger = winston.createLogger({
-    level: "info", // nível de log, pode ser 'info', 'error', 'warn', etc.
+    level: "info", 
     format: winston.format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
@@ -11,8 +11,8 @@ const logger = winston.createLogger({
         )
     ),
     transports: [
-        new winston.transports.Console(), // Exibe os logs no console
-        new winston.transports.File({ filename: "logs/app.log" }) // Salva logs em um arquivo
+        new winston.transports.Console(), 
+        new winston.transports.File({ filename: "logs/app.log" }) 
     ]
 });
 
