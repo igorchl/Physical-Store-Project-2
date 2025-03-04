@@ -11,6 +11,10 @@ export const initializeDatabase = async (): Promise<void> => {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nome TEXT,
           cep TEXT,
+          logradouro TEXT,
+          bairro TEXT,
+          localidade TEXT,
+          uf TEXT,
           latitude REAL,
           longitude REAL
         );
@@ -23,4 +27,3 @@ export const initializeDatabase = async (): Promise<void> => {
     });
   });
 };
-

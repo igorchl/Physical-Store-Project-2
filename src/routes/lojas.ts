@@ -5,7 +5,7 @@ import { db } from '../database';
 const router = Router();
 
 // Função para obter coordenadas do endereço
-const getCoordinatesFromAddress = async (address: string): Promise<{ latitude: number; longitude: number }> => {
+const getCoordinatesFromAddress = async (address: string): Promise<{ latitude: number; longitude: any }> => {
   try {
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {
@@ -24,6 +24,27 @@ const getCoordinatesFromAddress = async (address: string): Promise<{ latitude: n
     };
   } catch (error) {
     throw new Error('Erro na geocodificação do endereço.');
+  }
+};
+
+// Função para obter o endereço completo a partir do CEP
+const getAddressFromCEP = async (cep: string): Promise<{ logradouro: string, bairro: string, localidade: string, uf: string }> => {
+  try {
+    const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = response.data;
+
+    if (data.erro) {
+      throw new Error('CEP não encontrado');
+    }
+
+    return {
+      logradouro: data.logradouro,
+      bairro: data.bairro,
+      localidade: data.localidade,
+      uf: data.uf
+    };
+  } catch (error) {
+    throw new Error('Erro ao obter endereço do CEP');
   }
 };
 
@@ -78,6 +99,7 @@ router.get('/lojas', async (req: Request, res: Response) => {
   }
 });
 
+// Rota para deletar uma loja
 router.delete('/lojas/:id', async (req: Request, res: Response) => {
   const { id } = req.params; // Obtém o ID da loja a ser deletada
 
@@ -109,8 +131,6 @@ router.delete('/lojas/:id', async (req: Request, res: Response) => {
   }
 });
 
-
-
 // Rota para inserir uma nova loja
 router.post('/lojas', async (req: Request, res: Response) => {
   const { nome, cep } = req.body;
@@ -120,16 +140,19 @@ router.post('/lojas', async (req: Request, res: Response) => {
   }
 
   try {
+    // Obter endereço a partir do CEP
+    const endereco = await getAddressFromCEP(cep);
+
     // Obter coordenadas a partir do endereço (CEP)
     const address = `${cep}, Brasil`; // Você pode ajustar o formato do endereço conforme necessário
     const { latitude, longitude } = await getCoordinatesFromAddress(address);
 
     const query = `
-      INSERT INTO lojas (nome, cep, latitude, longitude)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO lojas (nome, cep, logradouro, bairro, localidade, uf, latitude, longitude)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(query, [nome, cep, latitude, longitude], function (err) {
+    db.run(query, [nome, cep, endereco.logradouro, endereco.bairro, endereco.localidade, endereco.uf, latitude, longitude], function (err) {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao inserir loja no banco de dados' });
@@ -143,8 +166,7 @@ router.post('/lojas', async (req: Request, res: Response) => {
   }
 });
 
-
-// Nova rota para atualizar dados de uma loja
+// Rota para atualizar dados de uma loja
 router.put('/lojas/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nome, cep, latitude, longitude } = req.body;
