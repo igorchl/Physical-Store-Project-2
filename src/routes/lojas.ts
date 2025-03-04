@@ -110,6 +110,40 @@ router.delete('/lojas/:id', async (req: Request, res: Response) => {
 });
 
 
+
+// Rota para inserir uma nova loja
+router.post('/lojas', async (req: Request, res: Response) => {
+  const { nome, cep } = req.body;
+
+  if (!nome || !cep) {
+    return res.status(400).json({ message: 'Nome e CEP são obrigatórios' });
+  }
+
+  try {
+    // Obter coordenadas a partir do endereço (CEP)
+    const address = `${cep}, Brasil`; // Você pode ajustar o formato do endereço conforme necessário
+    const { latitude, longitude } = await getCoordinatesFromAddress(address);
+
+    const query = `
+      INSERT INTO lojas (nome, cep, latitude, longitude)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.run(query, [nome, cep, latitude, longitude], function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao inserir loja no banco de dados' });
+      }
+
+      res.status(201).json({ message: 'Loja inserida com sucesso', id: this.lastID });
+    });
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao processar a requisição', error: error.message });
+  }
+});
+
+
 // Nova rota para atualizar dados de uma loja
 router.put('/lojas/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
