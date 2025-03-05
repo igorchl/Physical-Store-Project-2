@@ -48,7 +48,7 @@ const getAddressFromCEP = async (cep: string): Promise<{ logradouro: string, bai
   }
 };
 
-
+// Rota para testar Log de erro
 router.get('/test-error', (req: Request, res: Response) => {
   throw new Error('Erro intencional para teste');
 });
@@ -108,7 +108,7 @@ router.get('/lojas', async (req: Request, res: Response) => {
 
 // Rota para deletar uma loja
 router.delete('/lojas/:id', async (req: Request, res: Response) => {
-  const { id } = req.params; // Obtém o ID da loja a ser deletada
+  const { id } = req.params;
 
   if (!id) {
     return res.status(400).json({ message: 'ID é obrigatório para deletar uma loja' });
@@ -147,11 +147,9 @@ router.post('/lojas', async (req: Request, res: Response) => {
   }
 
   try {
-    // Obter endereço a partir do CEP
+    
     const endereco = await getAddressFromCEP(cep);
-
-    // Obter coordenadas a partir do endereço (CEP)
-    const address = `${cep}, Brasil`; // Você pode ajustar o formato do endereço conforme necessário
+    const address = `${cep}, Brasil`; 
     const { latitude, longitude } = await getCoordinatesFromAddress(address);
 
     const query = `

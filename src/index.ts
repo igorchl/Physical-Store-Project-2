@@ -10,7 +10,7 @@ const port = 3000;
 
 app.use(express.json());
 
-// Middleware para logar requisições
+
 app.use(expressWinston.logger({
   transports: [
     new winston.transports.Console(),
@@ -24,7 +24,7 @@ app.use(expressWinston.logger({
 
 app.use('/api', lojasRoute);
 
-// Middleware para logar erros
+
 app.use(expressWinston.errorLogger({
   transports: [
     new winston.transports.Console(),
