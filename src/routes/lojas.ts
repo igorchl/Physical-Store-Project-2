@@ -48,6 +48,13 @@ const getAddressFromCEP = async (cep: string): Promise<{ logradouro: string, bai
   }
 };
 
+
+router.get('/test-error', (req: Request, res: Response) => {
+  throw new Error('Erro intencional para teste');
+});
+
+
+
 // Rota para buscar lojas por CEP
 router.get('/lojas', async (req: Request, res: Response) => {
   const cep = req.query.cep as string;
