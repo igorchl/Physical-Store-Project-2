@@ -4,7 +4,7 @@ import { db } from '../database';
 
 const router = Router();
 
-// Função para obter coordenadas do endereço
+
 const getCoordinatesFromAddress = async (address: string): Promise<{ latitude: number; longitude: any }> => {
   try {
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
@@ -27,7 +27,7 @@ const getCoordinatesFromAddress = async (address: string): Promise<{ latitude: n
   }
 };
 
-// Função para obter o endereço completo a partir do CEP
+
 const getAddressFromCEP = async (cep: string): Promise<{ logradouro: string, bairro: string, localidade: string, uf: string }> => {
   try {
     const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
@@ -48,14 +48,14 @@ const getAddressFromCEP = async (cep: string): Promise<{ logradouro: string, bai
   }
 };
 
-// Rota para testar Log de erro
+
 router.get('/test-error', (req: Request, res: Response) => {
   throw new Error('Erro intencional para teste');
 });
 
 
 
-// Rota para buscar lojas por CEP
+
 router.get('/lojas', async (req: Request, res: Response) => {
   const cep = req.query.cep as string;
 
@@ -106,7 +106,7 @@ router.get('/lojas', async (req: Request, res: Response) => {
   }
 });
 
-// Rota para deletar uma loja
+
 router.delete('/lojas/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -138,7 +138,7 @@ router.delete('/lojas/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Rota para inserir uma nova loja
+
 router.post('/lojas', async (req: Request, res: Response) => {
   const { nome, cep } = req.body;
 
@@ -171,7 +171,7 @@ router.post('/lojas', async (req: Request, res: Response) => {
   }
 });
 
-// Rota para atualizar dados de uma loja
+
 router.put('/lojas/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nome, cep, latitude, longitude } = req.body;
