@@ -28,6 +28,7 @@ Buscar Lojas por CEP:
 
 bash
 curl -X GET "http://localhost:3000/lojas?cep=03003-000"
+
 Solução de Problemas
 Erros de Caminho de Dependência:
 
