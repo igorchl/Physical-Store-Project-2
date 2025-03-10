@@ -9,6 +9,7 @@ Clone o repositório:
 
 bash
 git clone [https://github.com/seu-usuario/physical-store.git](https://github.com/igorchl/Physical-Store-Project-2.git)
+
 cd physical-store
 Instale as dependências:
 
