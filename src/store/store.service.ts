@@ -68,14 +68,20 @@ export class StoreService {
   }
 
   // Método para criar uma nova loja
+ 
   async createStore(createStoreDto: { nome: string; cep: string }) {
     try {
+      console.log('Dados recebidos:', createStoreDto); // Log do corpo recebido
+  
       const { nome, cep } = createStoreDto;
-
+  
       const endereco = await this.getAddressFromCEP(cep);
+      console.log('Endereço obtido:', endereco); // Log do endereço retornado pelo ViaCEP
+  
       const address = `${cep}, Brasil`;
       const { latitude, longitude } = await this.getCoordinatesFromAddress(address);
-
+      console.log('Coordenadas obtidas:', { latitude, longitude }); // Log das coordenadas retornadas
+  
       const newStore = this.storeRepository.create({
         nome,
         cep,
@@ -86,13 +92,17 @@ export class StoreService {
         latitude,
         longitude,
       });
-
+      console.log('Objeto Loja criado:', newStore); // Log do objeto criado
+  
       await this.storeRepository.save(newStore);
+      console.log('Loja inserida no banco com sucesso!');
       return { message: 'Loja inserida com sucesso', id: newStore.id };
     } catch (error) {
+      console.error('Erro ao inserir loja no banco de dados:', error); // Log do erro exato
       throw new InternalServerErrorException('Erro ao inserir loja no banco de dados');
     }
-  }
+  }  
+
 
   // Método para atualizar loja por ID
   async updateStore(id: string, updateStoreDto: { nome?: string; cep?: string; latitude?: number; longitude?: number }) {
@@ -113,7 +123,7 @@ export class StoreService {
       const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
         params: {
           address,
-          key: 'YOUR_GOOGLE_MAPS_API_KEY',
+          key: 'AIzaSyBDBCnapa5Q1DJBdX1Grptoi3kBIuRYHgU',
         },
       });
 
@@ -203,7 +213,7 @@ export class StoreService {
         params: {
           origin: `${origin.lat},${origin.lng}`,
           destination: `${destination.lat},${destination.lng}`,
-          key: 'YOUR_GOOGLE_MAPS_API_KEY',
+          key: 'AIzaSyBDBCnapa5Q1DJBdX1Grptoi3kBIuRYHgU',
         },
       });
 
