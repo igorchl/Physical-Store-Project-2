@@ -11,14 +11,14 @@ export class StoreController {
     throw new InternalServerErrorException('Erro intencional para teste');
   }
 
-  // Buscar lojas por CEP
   @Get()
-  async getStores(@Query('cep') cep: string) {
-    if (!cep) {
-      throw new BadRequestException('CEP é obrigatório');
-    }
-    return this.storeService.findStoresByCep(cep); // Delegar ao serviço
+async getStores(@Query('cep') cep: string) {
+  if (!cep) {
+    throw new BadRequestException('CEP é obrigatório');
   }
+  return this.storeService.findStoresByCep(cep);
+}
+
 
   // Deletar loja por ID
   @Delete(':id')

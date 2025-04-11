@@ -23,9 +23,9 @@ export class StoreEntity {
   @Column() // Estado da loja
   uf: string;
 
-  @Column() // Latitude para localização
+  @Column('float') // Latitude para localização, explicitamente definida como tipo float
   latitude: number;
 
-  @Column() // Longitude para localização
+  @Column('float') // Longitude para localização, explicitamente definida como tipo float
   longitude: number;
 }
