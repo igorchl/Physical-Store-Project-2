@@ -40,23 +40,23 @@ export class StoreService {
   
           console.log('Dados da rota calculada:', routeData);
   
-          const frete = await this.calcularFreteMelhorEnvio(
-            3, // Peso fictício em kg
-            10, // Altura fictícia em cm
-            15, // Largura fictícia em cm
-            20, // Comprimento fictício em cm
-            '01005-000', // CEP Origem fictício (loja)
-            data.cep, // CEP Destino (usuário)
+          const fretes = await this.calcularFreteMelhorEnvio(
+            3, 
+            10, 
+            15, 
+            20, 
+            '01005-000', 
+            data.cep, 
           );
   
-          console.log('Frete calculado com Melhor Envio:', frete);
+          console.log('Fretes calculados:', fretes);
   
           return {
             loja: store.nome,
             distancia: `${(routeData.distance / 1000).toFixed(2)} km`,
             entregaPrivada: routeData.distance <= 50000 ? 'Disponível (R$15 fixo)' : 'Não disponível',
             tempoEstimado: `${(routeData.duration / 60).toFixed(0)} minutos`,
-            frete,
+            fretes: fretes.fretes,
           };
         }),
       );
@@ -68,8 +68,9 @@ export class StoreService {
     }
   }
   
+  
 
-  // Método para deletar uma loja por ID
+  
   async deleteStoreById(id: string) {
     const result = await this.storeRepository.delete(id);
     if (result.affected === 0) {
@@ -78,20 +79,20 @@ export class StoreService {
     return { message: 'Loja deletada com sucesso' };
   }
 
-  // Método para criar uma nova loja
+  
  
   async createStore(createStoreDto: { nome: string; cep: string }) {
     try {
-      console.log('Dados recebidos:', createStoreDto); // Log do corpo recebido
+      console.log('Dados recebidos:', createStoreDto); 
   
       const { nome, cep } = createStoreDto;
   
       const endereco = await this.getAddressFromCEP(cep);
-      console.log('Endereço obtido:', endereco); // Log do endereço retornado pelo ViaCEP
+      console.log('Endereço obtido:', endereco); 
   
       const address = `${cep}, Brasil`;
       const { latitude, longitude } = await this.getCoordinatesFromAddress(address);
-      console.log('Coordenadas obtidas:', { latitude, longitude }); // Log das coordenadas retornadas
+      console.log('Coordenadas obtidas:', { latitude, longitude }); 
   
       const newStore = this.storeRepository.create({
         nome,
@@ -103,13 +104,13 @@ export class StoreService {
         latitude,
         longitude,
       });
-      console.log('Objeto Loja criado:', newStore); // Log do objeto criado
+      console.log('Objeto Loja criado:', newStore); 
   
       await this.storeRepository.save(newStore);
       console.log('Loja inserida no banco com sucesso!');
       return { message: 'Loja inserida com sucesso', id: newStore.id };
     } catch (error) {
-      console.error('Erro ao inserir loja no banco de dados:', error); // Log do erro exato
+      console.error('Erro ao inserir loja no banco de dados:', error); 
       throw new InternalServerErrorException('Erro ao inserir loja no banco de dados');
     }
   }  
@@ -122,7 +123,7 @@ export class StoreService {
     comprimento: number,
     cepOrigem: string,
     cepDestino: string,
-  ): Promise<{ valor: number; prazo: string }> {
+  ): Promise<{ fretes: Array<{ tipo: string; valor: number; prazo: string }> }> {
     try {
       console.log('Dados para cálculo de frete com Melhor Envio:', {
         peso,
@@ -134,7 +135,7 @@ export class StoreService {
       });
   
       const response = await axios.post(
-        'https://melhorenvio.com.br/api/v2/me/shipment/calculate', // Altere para produção conforme necessário
+        'https://melhorenvio.com.br/api/v2/me/shipment/calculate', 
         {
           from: { postal_code: cepOrigem },
           to: { postal_code: cepDestino },
@@ -164,16 +165,32 @@ export class StoreService {
   
       console.log('Resposta da API Melhor Envio:', response.data);
   
-      // Filtra o primeiro serviço disponível que tem preço e prazo
-      const melhorOpcao = response.data.find((servico) => servico.custom_price && servico.custom_delivery_time);
+      
+      const pac = response.data.find((servico) => servico.name === 'PAC' && servico.custom_price && servico.custom_delivery_time);
+      const sedex = response.data.find((servico) => servico.name === 'SEDEX' && servico.custom_price && servico.custom_delivery_time);
   
-      if (!melhorOpcao) {
-        throw new Error('Nenhum serviço disponível com preço ou prazo válido');
+      if (!pac && !sedex) {
+        throw new Error('Nenhum serviço PAC ou SEDEX disponível');
       }
   
+      
       return {
-        valor: parseFloat(melhorOpcao.custom_price), // Converte o valor para número
-        prazo: `${melhorOpcao.custom_delivery_time} dias úteis`, // Usa o prazo ajustado
+        fretes: [
+          pac
+            ? {
+                tipo: pac.name,
+                valor: parseFloat(pac.custom_price),
+                prazo: `${pac.custom_delivery_time} dias úteis`,
+              }
+            : null,
+          sedex
+            ? {
+                tipo: sedex.name,
+                valor: parseFloat(sedex.custom_price),
+                prazo: `${sedex.custom_delivery_time} dias úteis`,
+              }
+            : null,
+        ].filter((frete) => frete !== null), 
       };
     } catch (error) {
       console.error('Erro ao calcular frete com Melhor Envio:', error.response?.data || error.message);
@@ -184,9 +201,10 @@ export class StoreService {
   
   
   
+  
 
 
-  // Método para atualizar loja por ID
+  
   async updateStore(id: string, updateStoreDto: { nome?: string; cep?: string; latitude?: number; longitude?: number }) {
     const store = await this.storeRepository.findOne({ where: { id: Number(id) } });
     if (!store) {
@@ -199,48 +217,48 @@ export class StoreService {
     return { message: 'Dados atualizados com sucesso' };
   }
 
-  // Método público para obter coordenadas de um endereço
+  
 public async getCoordinatesFromAddress(address: string): Promise<{ latitude: number; longitude: number }> {
   try {
-    // Log do endereço recebido
+    
     console.log('Endereço recebido para buscar coordenadas:', address);
 
-    // Realiza a requisição à API do Google Maps
+    
     const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
       params: {
         address,
-        key: process.env.GOOGLE_MAPS_API_KEY, // Usa a variável de ambiente para segurança
+        key: process.env.GOOGLE_MAPS_API_KEY, 
       },
     });
 
-    // Log da resposta bruta da API do Google Maps
+    
     console.log('Resposta da API Google Maps (geocodificação):', response.data);
 
-    // Verifica se a API retornou resultados
+    
     if (!response.data.results || response.data.results.length === 0) {
       console.error('Nenhuma coordenada encontrada para o endereço:', address);
       throw new Error('Não foi possível obter as coordenadas');
     }
 
-    // Extrai as coordenadas do resultado
+    
     const location = response.data.results[0].geometry.location;
 
-    // Log das coordenadas retornadas
+    
     console.log('Coordenadas obtidas com sucesso:', { latitude: location.lat, longitude: location.lng });
 
-    // Retorna as coordenadas (latitude e longitude)
+    
     return {
       latitude: location.lat,
       longitude: location.lng,
     };
   } catch (error) {
-    // Log detalhado de erro, se ocorrer
+    
     console.error('Erro na geocodificação do endereço:', error.response?.data || error.message);
     throw new InternalServerErrorException('Erro na geocodificação do endereço');
   }
 }
 
-  // Método público para obter endereço a partir do CEP
+  
   public async getAddressFromCEP(cep: string): Promise<{ logradouro: string; bairro: string; localidade: string; uf: string }> {
     try {
       const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
@@ -266,20 +284,20 @@ public async getCoordinatesFromAddress(address: string): Promise<{ latitude: num
     destination: { lat: number; lng: number },
   ): Promise<{ distance: number; duration: number }> {
     try {
-      // Logs para validar as coordenadas de origem e destino
+      
       console.log('Coordenadas do usuário:', origin);
       console.log('Coordenadas da loja:', destination);
   
-      // Chamada à API do Google Maps
+      
       const response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
         params: {
           origin: `${origin.lat},${origin.lng}`,
           destination: `${destination.lat},${destination.lng}`,
-          key: process.env.GOOGLE_MAPS_API_KEY, // Use a variável de ambiente para a chave da API
+          key: process.env.GOOGLE_MAPS_API_KEY, 
         },
       });
   
-      // Log da resposta da API Google Maps
+      
       console.log('Resposta da API Google Maps:', response.data);
   
       if (!response.data.routes || response.data.routes.length === 0) {
@@ -289,7 +307,7 @@ public async getCoordinatesFromAddress(address: string): Promise<{ latitude: num
       const route = response.data.routes[0];
       const leg = route.legs[0];
   
-      // Log dos detalhes da rota retornados pela API
+      
       console.log('Distância retornada:', leg.distance.value, 'metros');
       console.log('Duração retornada:', leg.duration.value, 'segundos');
   
@@ -298,7 +316,7 @@ public async getCoordinatesFromAddress(address: string): Promise<{ latitude: num
         duration: leg.duration.value,
       };
     } catch (error) {
-      // Log detalhado em caso de erro
+      
       console.error('Erro ao calcular distância usando Google Maps:', error.response?.data || error.message);
       throw new InternalServerErrorException('Erro ao calcular distância usando Google Maps');
     }

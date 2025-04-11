@@ -5,7 +5,7 @@ import { StoreService } from './store.service';
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
-  // Rota de teste de erro
+  
   @Get('test-error')
   testError() {
     throw new InternalServerErrorException('Erro intencional para teste');
@@ -20,16 +20,16 @@ async getStores(@Query('cep') cep: string) {
 }
 
 
-  // Deletar loja por ID
+  
   @Delete(':id')
   async deleteStore(@Param('id') id: string) {
     if (!id) {
       throw new NotFoundException('ID é obrigatório para deletar uma loja');
     }
-    return this.storeService.deleteStoreById(id); // Delegar ao serviço
+    return this.storeService.deleteStoreById(id); 
   }
 
-  // Criar nova loja
+  
   @Post()
   async createStore(@Body() createStoreDto: { nome: string; cep: string }) {
     const { nome, cep } = createStoreDto;
@@ -37,10 +37,10 @@ async getStores(@Query('cep') cep: string) {
     if (!nome || !cep) {
       throw new BadRequestException('Nome e CEP são obrigatórios');
     }
-    return this.storeService.createStore(createStoreDto); // Delegar ao serviço
+    return this.storeService.createStore(createStoreDto); 
   }
 
-  // Atualizar loja por ID
+  
   @Put(':id')
   async updateStore(
     @Param('id') id: string,
@@ -49,7 +49,7 @@ async getStores(@Query('cep') cep: string) {
     if (!Object.keys(updateStoreDto).length) {
       throw new BadRequestException('Pelo menos um campo deve ser fornecido para atualização');
     }
-    return this.storeService.updateStore(id, updateStoreDto); // Delegar ao serviço
+    return this.storeService.updateStore(id, updateStoreDto); 
   }
 }
 

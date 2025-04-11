@@ -1,31 +1,31 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity() // Indica que esta classe é uma entidade do TypeORM
+@Entity() 
 export class StoreEntity {
-  @PrimaryGeneratedColumn() // Define que este campo é a chave primária e será gerada automaticamente
+  @PrimaryGeneratedColumn() 
   id: number;
 
-  @Column() // Define um campo simples para armazenar o nome
+  @Column() 
   nome: string;
 
-  @Column() // CEP da loja
+  @Column() 
   cep: string;
 
-  @Column() // Endereço completo da loja
+  @Column() 
   logradouro: string;
 
-  @Column() // Bairro da loja
+  @Column() 
   bairro: string;
 
-  @Column() // Cidade da loja
+  @Column() 
   localidade: string;
 
-  @Column() // Estado da loja
+  @Column() 
   uf: string;
 
-  @Column('float') // Latitude para localização, explicitamente definida como tipo float
+  @Column('float') 
   latitude: number;
 
-  @Column('float') // Longitude para localização, explicitamente definida como tipo float
+  @Column('float') 
   longitude: number;
 }
