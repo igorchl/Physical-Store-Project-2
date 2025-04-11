@@ -13,66 +13,61 @@ export class StoreService {
 
   async findStoresByCep(cep: string): Promise<any> {
     try {
-        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = response.data;
-
-        if (data.erro) {
-            throw new NotFoundException('CEP não encontrado');
-        }
-
-        const userCoordinates = await this.getCoordinatesFromAddress(
-            `${data.logradouro}, ${data.localidade}, ${data.uf}`,
-        );
-        console.log('Coordenadas do usuário:', userCoordinates);
-
-        const stores = await this.storeRepository.find();
-        console.log('Lojas recuperadas:', stores); // Log do array completo de lojas
-        stores.forEach(store => {
-            console.log(`Loja: ${store.nome}, Latitude: ${store.latitude}, Longitude: ${store.longitude}`);
-        });
-
-        const storeDetails = await Promise.all(
-            stores.map(async (store) => {
-                console.log('Processando loja:', store.nome);
-                console.log('Coordenadas da loja:', { latitude: store.latitude, longitude: store.longitude });
-
-                const routeData = await this.getRouteDistanceFromGoogle(
-                    { lat: userCoordinates.latitude, lng: userCoordinates.longitude },
-                    { lat: store.latitude, lng: store.longitude },
-                );
-
-                console.log('Dados da rota calculada:', routeData);
-
-                const isPrivateDeliveryAvailable =
-                    routeData.distance <= 50000 ? 'Disponível (R$15 fixo)' : 'Não disponível';
-                console.log('Disponibilidade de entrega privada:', isPrivateDeliveryAvailable);
-
-                const freteSimulado = await this.calcularFreteSimulado(
-                    3, // Peso fictício em kg
-                    routeData.distance / 1000, // Distância em km
-                    10, // Altura fictícia em cm
-                    15, // Largura fictícia em cm
-                    20, // Comprimento fictício em cm
-                );
-
-                console.log('Frete simulado calculado:', freteSimulado);
-
-                return {
-                    loja: store.nome,
-                    distancia: `${(routeData.distance / 1000).toFixed(2)} km`,
-                    entregaPrivada: isPrivateDeliveryAvailable,
-                    tempoEstimado: `${(routeData.duration / 60).toFixed(0)} minutos`,
-                    frete: freteSimulado,
-                };
-            }),
-        );
-
-        return { lojas: storeDetails };
+      const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = response.data;
+  
+      if (data.erro) {
+        throw new NotFoundException('CEP não encontrado');
+      }
+  
+      const userCoordinates = await this.getCoordinatesFromAddress(
+        `${data.logradouro}, ${data.localidade}, ${data.uf}`,
+      );
+      console.log('Coordenadas do usuário:', userCoordinates);
+  
+      const stores = await this.storeRepository.find();
+      console.log('Lojas recuperadas:', stores);
+  
+      const storeDetails = await Promise.all(
+        stores.map(async (store) => {
+          console.log('Processando loja:', store.nome);
+          console.log('Coordenadas da loja:', { latitude: store.latitude, longitude: store.longitude });
+  
+          const routeData = await this.getRouteDistanceFromGoogle(
+            { lat: userCoordinates.latitude, lng: userCoordinates.longitude },
+            { lat: store.latitude, lng: store.longitude },
+          );
+  
+          console.log('Dados da rota calculada:', routeData);
+  
+          const frete = await this.calcularFreteMelhorEnvio(
+            3, // Peso fictício em kg
+            10, // Altura fictícia em cm
+            15, // Largura fictícia em cm
+            20, // Comprimento fictício em cm
+            '01005-000', // CEP Origem fictício (loja)
+            data.cep, // CEP Destino (usuário)
+          );
+  
+          console.log('Frete calculado com Melhor Envio:', frete);
+  
+          return {
+            loja: store.nome,
+            distancia: `${(routeData.distance / 1000).toFixed(2)} km`,
+            entregaPrivada: routeData.distance <= 50000 ? 'Disponível (R$15 fixo)' : 'Não disponível',
+            tempoEstimado: `${(routeData.duration / 60).toFixed(0)} minutos`,
+            frete,
+          };
+        }),
+      );
+  
+      return { lojas: storeDetails };
     } catch (error) {
-        console.error('Erro ao processar a requisição:', error);
-        throw new InternalServerErrorException('Erro ao processar a requisição');
+      console.error('Erro ao processar a requisição:', error);
+      throw new InternalServerErrorException('Erro ao processar a requisição');
     }
-}
+  }
+  
 
   // Método para deletar uma loja por ID
   async deleteStoreById(id: string) {
@@ -120,45 +115,75 @@ export class StoreService {
   }  
 
   
-
-  // Método para calcular frete simulado
-  private async calcularFreteSimulado(
+  private async calcularFreteMelhorEnvio(
     peso: number,
-    distancia: number,
     altura: number,
     largura: number,
     comprimento: number,
+    cepOrigem: string,
+    cepDestino: string,
   ): Promise<{ valor: number; prazo: string }> {
-    const tabelaFrete = [
-      { faixaPeso: [0, 1], distancia: [0, 50], preco: 15.0, prazo: 3 },
-      { faixaPeso: [1, 5], distancia: [0, 50], preco: 20.0, prazo: 3 },
-      { faixaPeso: [0, 1], distancia: [51, 200], preco: 25.0, prazo: 7 },
-      { faixaPeso: [1, 5], distancia: [51, 200], preco: 30.0, prazo: 7 },
-      { faixaPeso: [0, Infinity], distancia: [201, Infinity], preco: 40.0, prazo: 10 },
-    ];
-
-    // Encontrar a regra na tabela de preços
-    const regra = tabelaFrete.find(
-      (r) =>
-        peso >= r.faixaPeso[0] &&
-        peso <= r.faixaPeso[1] &&
-        distancia >= r.distancia[0] &&
-        distancia <= r.distancia[1],
-    );
-
-    if (!regra) {
-      throw new Error('Não foi possível calcular o frete com as regras atuais.');
+    try {
+      console.log('Dados para cálculo de frete com Melhor Envio:', {
+        peso,
+        altura,
+        largura,
+        comprimento,
+        cepOrigem,
+        cepDestino,
+      });
+  
+      const response = await axios.post(
+        'https://melhorenvio.com.br/api/v2/me/shipment/calculate', // Altere para produção conforme necessário
+        {
+          from: { postal_code: cepOrigem },
+          to: { postal_code: cepDestino },
+          products: [
+            {
+              width: largura,
+              height: altura,
+              length: comprimento,
+              weight: peso,
+              insurance_value: 0,
+              quantity: 1,
+            },
+          ],
+          options: {
+            receipt: false,
+            own_hand: false,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MELHOR_ENVIO_API_KEY}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'MinhaAplicacao (meuemail@exemplo.com)',
+          },
+        },
+      );
+  
+      console.log('Resposta da API Melhor Envio:', response.data);
+  
+      // Filtra o primeiro serviço disponível que tem preço e prazo
+      const melhorOpcao = response.data.find((servico) => servico.custom_price && servico.custom_delivery_time);
+  
+      if (!melhorOpcao) {
+        throw new Error('Nenhum serviço disponível com preço ou prazo válido');
+      }
+  
+      return {
+        valor: parseFloat(melhorOpcao.custom_price), // Converte o valor para número
+        prazo: `${melhorOpcao.custom_delivery_time} dias úteis`, // Usa o prazo ajustado
+      };
+    } catch (error) {
+      console.error('Erro ao calcular frete com Melhor Envio:', error.response?.data || error.message);
+      throw new InternalServerErrorException('Erro ao calcular frete com a API do Melhor Envio');
     }
-
-    // Adicionar custo baseado em dimensões, se necessário
-    const volume = altura * largura * comprimento; // Volume em cm³
-    const custoVolume = volume > 10000 ? 5 : 0; // Taxa adicional para pacotes grandes
-
-    return { 
-      valor: regra.preco + custoVolume, 
-      prazo: `${regra.prazo} dias úteis` 
-    };
   }
+  
+  
+  
+  
 
 
   // Método para atualizar loja por ID
