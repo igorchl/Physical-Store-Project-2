@@ -70,6 +70,50 @@ export class StoreService {
   
   
 
+
+
+  async listAllStores(limit: number, offset: number): Promise<any> {
+    const [stores, total] = await this.storeRepository.findAndCount({
+      take: limit,
+      skip: offset,
+    });
+  
+    const mappedStores = stores.map((store) => ({
+      storeID: store.id.toString(),
+      storeName: store.nome,
+      takeOutInStore: true, // Valor fixo assumindo que todas têm retirada
+      shippingTimeInDays: 2, // Ajuste para o tempo real ou default
+      latitude: store.latitude.toString(),
+      longitude: store.longitude.toString(),
+      address1: store.logradouro,
+      address2: store.bairro,
+      address3: "", // Supondo que esteja vazio
+      city: store.localidade,
+      district: store.bairro,
+      state: store.uf,
+      type: "PDV", // Altere para "PDV" se necessário
+      country: "Brasil",
+      postalCode: store.cep,
+      telephoneNumber: `(11) ${store.id.toString().padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}`, // Geração única com ID da loja
+      emailAddress: `contato${store.id}@lojapdv${store.id}.com`, // Email único baseado no ID da loja
+    }));
+  
+    return {
+      stores: mappedStores,
+      limit,
+      offset,
+      total,
+    };
+  }
+   
+  
+
+
+
+
+
+
+
   
   async deleteStoreById(id: string) {
     const result = await this.storeRepository.delete(id);
@@ -116,7 +160,7 @@ export class StoreService {
   }  
 
   
-  private async calcularFreteMelhorEnvio(
+  public async calcularFreteMelhorEnvio(
     peso: number,
     altura: number,
     largura: number,

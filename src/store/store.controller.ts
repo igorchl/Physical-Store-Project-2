@@ -40,6 +40,15 @@ async getStores(@Query('cep') cep: string) {
     return this.storeService.createStore(createStoreDto); 
   }
 
+
+
+  @Get('list-all')
+  async listAllStores(@Query('limit') limit: number, @Query('offset') offset: number) {
+    return this.storeService.listAllStores(limit ?? 10, offset ?? 0);
+  }
+  
+
+
   
   @Put(':id')
   async updateStore(
