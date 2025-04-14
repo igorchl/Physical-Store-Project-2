@@ -81,21 +81,21 @@ export class StoreService {
     const mappedStores = stores.map((store) => ({
       storeID: store.id.toString(),
       storeName: store.nome,
-      takeOutInStore: true, // Valor fixo assumindo que todas têm retirada
-      shippingTimeInDays: 2, // Ajuste para o tempo real ou default
+      takeOutInStore: true, 
+      shippingTimeInDays: 2, 
       latitude: store.latitude.toString(),
       longitude: store.longitude.toString(),
       address1: store.logradouro,
       address2: store.bairro,
-      address3: "", // Supondo que esteja vazio
+      address3: "", 
       city: store.localidade,
       district: store.bairro,
       state: store.uf,
-      type: "PDV", // Altere para "PDV" se necessário
+      type: "PDV", 
       country: "Brasil",
       postalCode: store.cep,
-      telephoneNumber: `(11) ${store.id.toString().padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}`, // Geração única com ID da loja
-      emailAddress: `contato${store.id}@lojapdv${store.id}.com`, // Email único baseado no ID da loja
+      telephoneNumber: `(11) ${store.id.toString().padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}`, 
+      emailAddress: `contato${store.id}@lojapdv${store.id}.com`, 
     }));
   
     return {
@@ -107,6 +107,79 @@ export class StoreService {
   }
    
   
+
+  async getStoresByState(state: string, limit: number, offset: number): Promise<any> {
+    const [stores, total] = await this.storeRepository.findAndCount({
+      take: limit,
+      skip: offset,
+    });
+  
+    
+    const mappedStores = stores
+      .filter((store) => store.uf?.toUpperCase() === state.toUpperCase()) 
+      .map((store) => ({
+        storeID: store.id.toString(),
+        storeName: store.nome,
+        takeOutInStore: true, 
+        shippingTimeInDays: 2, 
+        latitude: store.latitude.toString(),
+        longitude: store.longitude.toString(),
+        address1: store.logradouro,
+        address2: store.bairro,
+        address3: "", 
+        city: store.localidade,
+        district: store.bairro,
+        state: store.uf,
+        type: "PDV", 
+        country: "Brasil",
+        postalCode: store.cep,
+        telephoneNumber: `(11) ${store.id.toString().padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}`, 
+        emailAddress: `contato${store.id}@lojapdv${store.id}.com`, 
+      }));
+  
+    return {
+      stores: mappedStores,
+      limit,
+      offset,
+      total: mappedStores.length, 
+    };
+  }
+  
+
+
+
+
+
+
+  async getStoreById(id: string): Promise<any> {
+    const store = await this.storeRepository.findOne({ where: { id: Number(id) } });
+  
+    if (!store) {
+      return null;
+    }
+  
+    return {
+      storeID: store.id.toString(),
+      storeName: store.nome,
+      takeOutInStore: true,
+      shippingTimeInDays: 2,
+      latitude: store.latitude.toString(),
+      longitude: store.longitude.toString(),
+      address1: store.logradouro,
+      address2: store.bairro,
+      address3: "", 
+      city: store.localidade,
+      district: store.bairro,
+      state: store.uf,
+      type: "PDV", 
+      country: "Brasil",
+      postalCode: store.cep,
+      telephoneNumber: `(11) ${store.id.toString().padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}`, 
+      emailAddress: `contato${store.id}@lojapdv${store.id}.com`, 
+    };
+  }
+  
+
 
 
 
